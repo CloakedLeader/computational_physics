@@ -27,16 +27,16 @@ def get_time_constraint() -> tuple:
 
 class Bodies:
 
-    G = 6.67430e-11
+    G = sp.constants.gravitational_constant
 
-    _instances = []
+
+    _instances: List["Bodies"] = []
 
 
     def __init__( self, data: dict, name: str ) -> None:
-        self.x = data['x']
-        self.y = data['y']
-        self.vx = data['vx']
-        self.vy = data['vy']
+        self.pos = np.array( [ data['x'], data['y'] ], dtype=float )
+        self.vel = np.array( [ data['vx'], data['vy'] ], dtype=float )
+        self.force = np.zeros(2)
         self.mass = data['mass']
         self.name = name
         Bodies._instances.append(self)
@@ -44,43 +44,72 @@ class Bodies:
     def __repr__( self ) -> str:
         return f"Body (x={self.x}, y={self.y}, vx={self.vx}, vy={self.vy}, mass={self.mass})"
     
-    def all_instances(cls):
+    def all_instances(cls) -> List["Bodies"]:
         return cls._instances
     
-    def dist( self, other: "Bodies" ) -> tuple[ float, float, float ]:
-        dx = other.x - self.x
-        dy = other.y - self.y
-        return math.sqrt( dx ** 2 + dy ** 2), dx, dy
+    def dist( self, other: "Bodies" ) -> tuple[ float, np.ndarray ]:
+        dist = other.pos - self.pos
+        r = np.linalg.norn( dist )
+        return r, dist
     
+    def reset_force( self ):
+        self.force = np.zeros(2)
     
-    def net_grav_force( self, others: List[ "Bodies" ] ) -> tuple[ float, float, float ]:
-        fx_total = 0.0
-        fy_total = 0.0
+    def net_grav_force( self, others: List[ "Bodies" ] ) -> None:
+        self.reset_force()
         for other in others:
             if other is self:
                 continue
-            r, dx, dy = self.dist( other )
-            if r == 0:
+            r_mag, r_vec = self.dist( other )
+            if r_mag == 0:
                 continue
-            force_mag = Bodies.G * self.mass * other.mass / r ** 2
-            fx_total += force_mag * dx / r
-            fy_total += force_mag * dy / r
-            self.force_vec = (fx_total, fy_total)
-            self.force_mag = force_mag
-            return force_mag, fx_total, fy_total
+            r_hat = r_vec / r_mag
+            force_mag = Bodies.G * self.mass * other.mass / r_mag ** 2
+            self.force += force_mag * r_hat
+    
+
+    
+    #def net_force_vec( self, others: List[ "Bodies" ] ) -> tuple[ float, float ]:
+        #self.force_vec = self.net_grav_force( others )[1:]
+        #return self.force_vec
     
     
-    def net_force_vec( self, others: List[ "Bodies" ] ) -> tuple[ float, float ]:
-        self.force_vec = self.net_grav_force( others )[1:]
-        return self.force_vec
+    #def net_force_mag( self, others: List[ "Bodies" ] ) -> float:
+        #self.force_mag = self.net_grav_force( others )[0]
+        #return self.force_mag 
     
+    def update( self, dt: float ):
+        accel = self.force / self.mass
+        self.vel += accel * dt
+        self.pos += self.vel * dt
+
+
+class Simulation:
+
+    def __init__( self, bodies: List["Bodies"] ):
+        self.bodies = bodies
+
+    def step( self, dt ):
+        for body in self.bodies:
+            body.net_grav_force(self.bodies)
+
+            for body in self.bodies:
+                body.update(dt)
+
+    def run( self, dt: float, steps):
+        for  _ in range(steps):
+            self.steps(dt)
+
+            
     
-    def net_force_mag( self, others: List[ "Bodies" ] ) -> float:
-        self.force_mag = self.net_grav_force( others )[0]
-        return self.force_mag 
-    
-    def accel( self ) -> tuple[ float, float ]:
-        pass
+            
+
+
+
+
+
+
+
 
 
 
@@ -98,5 +127,17 @@ def create_list_of_dt ( input: tuple ) -> np.ndarray:
     else:
         return timesteps[timesteps <= input[1]]
     
+def update_bodies( bodies: List["Bodies"], dt: float ) -> None:
+    for body in bodies:
+        accel = body.force / body.mass
+        body.vel += accel * dt
+        body.pos += body.vel * dt
+
+def run_simulation( bodies: List["Bodies"], dt: float, steps: float ):
+
+    for step in range(steps):
+        pass
+        
+
 
 

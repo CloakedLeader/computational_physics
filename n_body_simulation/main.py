@@ -21,7 +21,8 @@ def csv_to_listofdicts( path: str ):
 # --- Body Class ---
 class Bodies:
 
-    G = sp.constants.gravitational_constant
+    #G = sp.constants.gravitational_constant
+    G = 1
 
     body_counter = 1
 
@@ -64,12 +65,23 @@ class Bodies:
             force_mag = Bodies.G * self.mass * other.mass / r_mag ** 2
             self.force += force_mag * r_hat
 
+    @property
+    def accel( self ) -> float:
+        return self.force / self.mass
+
     
-    def update( self, dt: float ):
-        accel = self.force / self.mass
-        self.vel += accel * dt
-        self.pos += self.vel * dt
-        self.history.append(self.pos.copy())
+    def verlet_pos_update( self, dt: float ):
+        self.pos += self.vel * dt + 0.5 * self.accel * dt**2
+
+    def update( self, others: List["Bodies"], dt: float ):
+        old_accel = self.accel
+        self.verlet_pos_update(dt)
+        self.net_grav_force(others)
+        new_accel = self.accel
+        self.vel += 0.5 * (old_accel + new_accel) * dt
+
+
+
 
 # --- Simulation Class ---
 class Simulation:
@@ -85,11 +97,13 @@ class Simulation:
                 body.update(dt)
 
     def run( self, dt: float, steps: int ):
-        for _ in range(steps):
+        for body in self.bodies:
+            body.net_grav_force(self.bodies)
+
+        for step in range(steps):
             for body in self.bodies:
-                body.net_grav_force(self.bodies)
-            for body in self.bodies:
-                body.update(dt)
+                body.update(self.bodies, dt)
+                body.history.append(body.pos.copy())
 
             
 def initialise_many_bodies( input: list ) -> List:
@@ -104,8 +118,8 @@ dummy = csv_to_listofdicts(r"D:\computational_physics\n_body_simulation\bodies.c
 list_of_bodies = initialise_many_bodies(dummy)
 sim = Simulation(list_of_bodies)
 
-dt = 10000
-steps = 3154
+dt = 0.01
+steps = 500
 sim.run(dt, steps)
 
 bodies_history = []
@@ -115,8 +129,8 @@ for body in list_of_bodies:
 
 fig, ax = plt.subplots()
 ax.set_aspect( 'equal' )
-ax.set_xlim( -5e12, 5e12 )
-ax.set_ylim( -5e12, 5e12 )
+ax.set_xlim( -2, 2 )
+ax.set_ylim( -2, 2 )
 
 scatters = [ax.plot([], [], 'o')[0] for _ in list_of_bodies]
 

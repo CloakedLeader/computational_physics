@@ -4,7 +4,7 @@ This repository contains simulations and computational methods I am learning/pra
 
 ## Motivation
 
-I aim to gain hands-on experince with numerical solutions to physical problems and to explore current areas of computational physics research.
+I aim to gain hands-on experince with numerical solutions to physical problems and to explore current areas of computational physics research. I would also like to study machine learning and AI-methods for general interest.
 
 ## Installation
 

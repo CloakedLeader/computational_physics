@@ -118,8 +118,8 @@ dummy = csv_to_listofdicts(r"D:\computational_physics\n_body_simulation\bodies.c
 list_of_bodies = initialise_many_bodies(dummy)
 sim = Simulation(list_of_bodies)
 
-dt = 0.01
-steps = 500
+dt = 0.001
+steps = 10000
 sim.run(dt, steps)
 
 bodies_history = []
@@ -133,22 +133,26 @@ ax.set_xlim( -2, 2 )
 ax.set_ylim( -2, 2 )
 
 scatters = [ax.plot([], [], 'o')[0] for _ in list_of_bodies]
+lines = [ax.plot([], [], lw=1)[0] for _ in list_of_bodies]
 
 def init():
-    for scatter in scatters:
+    for scatter, line in zip(scatters, lines):
         scatter.set_data([], [])
-    return scatters
+        line.set_data([], [])
+    return scatters + lines
 
 def update(frame):
     print(f"Frame {frame}:")
     for i, body in enumerate(list_of_bodies):
-        x, y = body.history[frame]
+        history = np.array(body.history)
+        lines[i].set_data(history[:frame+1, 0], history[:frame+1, 1])
+        x, y = history[frame]
         print(f"Body {i} position: ({x}, {y})")
         scatters[i].set_data([x], [y])
-    return scatters
+    return scatters + lines
 
 ani = FuncAnimation(
-    fig, update, frames=len(bodies_history[0]),
+    fig, update, frames=len(list_of_bodies[0].history),
     init_func=init, blit=False, interval=20
 )
 

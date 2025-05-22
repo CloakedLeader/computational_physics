@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import pandas as pd
 import scipy as sp
+import math
 from typing import List
 
 """
@@ -14,6 +15,8 @@ Structure of dictionary to add bodies:
 'mass': ...
 """
 
+pi = math.pi
+
 def csv_to_listofdicts( path: str ):
     df = pd.read_csv(f'{path}', comment='#', header=None, names=['x', 'y', 'vx', 'vy', 'mass'])
     return df.to_dict('records')
@@ -22,7 +25,7 @@ def csv_to_listofdicts( path: str ):
 class Bodies:
 
     #G = sp.constants.gravitational_constant
-    G = 1
+    G = 4 * pi**2
 
     body_counter = 1
 
@@ -36,7 +39,7 @@ class Bodies:
         self.mass = data['mass']
         self.identifier = Bodies.body_counter
         Bodies.body_counter += 1
-        self.history = []
+        self.history = [] 
         Bodies._instances.append(self)
 
     def __repr__( self ) -> str:
@@ -94,7 +97,7 @@ class Simulation:
             body.net_grav_force(self.bodies)
 
             for body in self.bodies:
-                body.update(dt)
+                body.update( self.bodies, dt )
 
     def run( self, dt: float, steps: int ):
         for body in self.bodies:
@@ -102,7 +105,7 @@ class Simulation:
 
         for step in range(steps):
             for body in self.bodies:
-                body.update(self.bodies, dt)
+                body.update( self.bodies, dt )
                 body.history.append(body.pos.copy())
 
             
@@ -119,7 +122,7 @@ list_of_bodies = initialise_many_bodies(dummy)
 sim = Simulation(list_of_bodies)
 
 dt = 0.001
-steps = 10000
+steps = 5000
 sim.run(dt, steps)
 
 bodies_history = []

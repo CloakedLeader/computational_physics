@@ -24,8 +24,8 @@ def csv_to_listofdicts( path: str ):
 # --- Body Class ---
 class Bodies:
 
-    #G = sp.constants.gravitational_constant
-    G = 4 * pi**2
+    G = sp.constants.gravitational_constant
+    #G = 4 * pi**2
 
     body_counter = 1
 
@@ -83,30 +83,92 @@ class Bodies:
         new_accel = self.accel
         self.vel += 0.5 * (old_accel + new_accel) * dt
 
-
-
+    def kin_energy( self ):
+        vel_mag = np.linalg.norm( self.vel )
+        out = float(0.5 * self.mass * vel_mag**2 )
+        return out
+    
+    def pot_energy( self, others: List["Bodies"] ):
+        total = 0
+        for other in others:
+            if other is self:
+                continue
+            r_mag = self.dist( other )[0]
+            if r_mag == 0:
+                continue
+            total += - Bodies.G * self.mass * other.mass / r_mag
+            return total
+    
 
 # --- Simulation Class ---
 class Simulation:
 
     def __init__( self, bodies: List["Bodies"] ):
         self.bodies = bodies
+        self.kin = 0
+        self.pot = 0
+        self.total = 0
+
+
+    def total_kin_energy( self ):
+        total = 0
+        for body in self.bodies:
+            total += body.kin_energy()
+        return total
+    
+
+    def total_pot_energy( self ):
+        total = 0
+        for body in self.bodies:
+            total += body.pot_energy( self.bodies )
+        return total
+    
+    def tot_energy( self ):
+        self.total = self.kin + self.pot
+
 
     def step( self, dt ):
         for body in self.bodies:
-            body.net_grav_force(self.bodies)
+            body.net_grav_force( self.bodies ) 
 
-            for body in self.bodies:
-                body.update( self.bodies, dt )
+        for body in self.bodies:
+            body.update( self.bodies, dt )
+
+        self.kin = self.total_kin_energy()
+        self.pot = self.total_pot_energy()
+        self.total = self.tot_energy()
+        
 
     def run( self, dt: float, steps: int ):
-        for body in self.bodies:
-            body.net_grav_force(self.bodies)
+        self.kin_energy_hist = []
+        self.pot_energy_hist = []
+        self.total_energy_hist = []
+        self.time_history = []
+        self.kin = self.total_kin_energy()
+        self.pot = self.total_pot_energy()
+        self.total = self.tot_energy()
+        self.kin_energy_hist.append(self.kin)
+        self.pot_energy_hist.append(self.pot)
+        self.total_energy_hist.append(self.total)
+        self.time_history.append(0)
 
-        for step in range(steps):
+        for step in range(1, steps + 1):
             for body in self.bodies:
-                body.update( self.bodies, dt )
+                body.net_grav_force(self.bodies)
+            for body in self.bodies:
+                body.update(self.bodies, dt)
                 body.history.append(body.pos.copy())
+
+            self.kin = self.total_kin_energy()
+            self.pot = self.total_pot_energy()
+            self.total = self.tot_energy()
+            self.kin_energy_hist.append(self.kin)
+            self.pot_energy_hist.append(self.pot)
+            self.total_energy_hist.append(self.total)
+            self.time_history.append(step * dt)
+
+    
+
 
             
 def initialise_many_bodies( input: list ) -> List:
@@ -117,12 +179,12 @@ def initialise_many_bodies( input: list ) -> List:
 
 
 
-dummy = csv_to_listofdicts(r"D:\computational_physics\n_body_simulation\bodies.csv")
+dummy = csv_to_listofdicts(r"D:\computational_physics\n_body_simulation\bodies_SI.csv")
 list_of_bodies = initialise_many_bodies(dummy)
 sim = Simulation(list_of_bodies)
 
-dt = 0.001
-steps = 5000
+dt = 2400
+steps = 6000
 sim.run(dt, steps)
 
 bodies_history = []
@@ -132,8 +194,8 @@ for body in list_of_bodies:
 
 fig, ax = plt.subplots()
 ax.set_aspect( 'equal' )
-ax.set_xlim( -2, 2 )
-ax.set_ylim( -2, 2 )
+ax.set_xlim( -3e11, 3e11 )
+ax.set_ylim( -3e11, 3e11 )
 
 scatters = [ax.plot([], [], 'o')[0] for _ in list_of_bodies]
 lines = [ax.plot([], [], lw=1)[0] for _ in list_of_bodies]
@@ -158,6 +220,17 @@ ani = FuncAnimation(
     fig, update, frames=len(list_of_bodies[0].history),
     init_func=init, blit=False, interval=20
 )
+
+plt.figure(figsize=(10, 6))
+plt.plot(sim.time_history, sim.kin_energy_hist, label="Kinetic Energy", color="blue")
+plt.plot(sim.time_history, sim.pot_energy_hist, label="Potential Energy", color="green")
+plt.plot(sim.time_history, sim.total_energy_hist, label="Total Energy", color="red", linestyle= "--")
+plt.ylabel = "Energies"
+plt.xlabel = "Time"
+plt.title = "Energy vs Time"
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
 
 plt.show()
 

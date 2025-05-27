@@ -149,7 +149,7 @@ class Simulation:
         self.total = self.tot_energy()
         self.kin_energy_hist.append(self.kin)
         self.pot_energy_hist.append(self.pot)
-        self.total_energy_hist.append(self.total)
+        self.total_energy_hist.append(self.kin + self.pot)
         self.time_history.append(0)
 
         for step in range(1, steps + 1):
@@ -161,7 +161,7 @@ class Simulation:
 
             self.kin = self.total_kin_energy()
             self.pot = self.total_pot_energy()
-            self.total = self.tot_energy()
+            self.total = self.kin + self.pot
             self.kin_energy_hist.append(self.kin)
             self.pot_energy_hist.append(self.pot)
             self.total_energy_hist.append(self.total)
@@ -183,8 +183,8 @@ dummy = csv_to_listofdicts(r"D:\computational_physics\n_body_simulation\bodies_S
 list_of_bodies = initialise_many_bodies(dummy)
 sim = Simulation(list_of_bodies)
 
-dt = 2400
-steps = 6000
+dt = 60
+steps = 10000
 sim.run(dt, steps)
 
 bodies_history = []
@@ -234,7 +234,14 @@ plt.tight_layout()
 
 plt.show()
 
-print(f"Steps: {steps}")
-for i, body in enumerate(list_of_bodies):
-    print(f"Body {i} has {len(body.history)} positions.")
+#print(f"Steps: {steps}")
+#for i, body in enumerate(list_of_bodies):
+    #print(f"Body {i} has {len(body.history)} positions.")
+
+
+energy = np.array(sim.total_energy_hist)
+time = np.array(sim.time_history)
+grad_array = np.gradient(energy,time)
+avg_grad = (energy[-1] - energy[0]/ time[-1] - time[0])
+print(f"Average energy gradient: {avg_grad:.3e} J/s")
 

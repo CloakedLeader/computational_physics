@@ -21,7 +21,7 @@ Structure of dictionary to add bodies:
 pi = math.pi
 
 def csv_to_listofdicts( path: str ):
-    df = pd.read_csv(f'{path}', comment='#', header=None, names=['x', 'y', 'vx', 'vy', 'mass'])
+    df = pd.read_csv(f'{path}',dtype={'name': str}, comment='#', header=None, names=['x', 'y', 'vx', 'vy', 'mass', 'name'])
     return df.to_dict('records')
 
 # --- Body Class ---
@@ -38,6 +38,7 @@ class Bodies:
     def __init__( self, data: dict) -> None:
         self.pos = np.array( [ data['x'], data['y'] ], dtype=float )
         self.vel = np.array( [ data['vx'], data['vy'] ], dtype=float )
+        self.name = str(data['name'])
         self.force = np.zeros(2)
         self.mass = data['mass']
         self.identifier = Bodies.body_counter
@@ -111,6 +112,13 @@ class Simulation:
         self.kin = 0
         self.pot = 0
         self.total = 0
+
+    def list_of_names( self ):
+        dummy_list = []
+        for body in self.bodies:
+            dummy_list.append(body.name)
+        return dummy_list
+
 
 
     def total_kin_energy( self ):
@@ -194,7 +202,7 @@ class NBodyGUI:
 
         tk.Label(root, text="Initial Configuration: ").grid(row=3, column=0)
         self.config_var = tk.StringVar(root)
-        self.config_var.set("Random")
+        self.config_var.set("Simple Solar System")
         options = ["Random", "Simple Solar System", "Three Body Problem", "Binary System"]
         self.dropdown = tk.OptionMenu(root, self.config_var, *options)
         self.dropdown.grid(row=3, column=1)
@@ -236,17 +244,20 @@ class NBodyGUI:
 
         fig, ax = plt.subplots()
         ax.set_aspect( 'equal' )
-        ax.set_xlim( -6, 6 )
-        ax.set_ylim( -6, 6 )
+        ax.set_xlim( -2, 2 )
+        ax.set_ylim( -2, 2 )
 
         scatters = [ax.plot([], [], 'o')[0] for _ in list_of_bodies]
+        labels = [ax.text(0, 0, name, fontsize=8, ha='left', va='bottom') for name in sim.list_of_names()]
         lines = [ax.plot([], [], lw=1)[0] for _ in list_of_bodies]
 
         def init():
             for scatter, line in zip(scatters, lines):
                 scatter.set_data([], [])
                 line.set_data([], [])
-            return scatters + lines
+            for label in labels:
+                label.set_position((0,0))
+            return scatters + lines + labels
 
         def update(frame):
             print(f"Frame {frame}:")
@@ -256,7 +267,8 @@ class NBodyGUI:
                 x, y = history[frame]
                 print(f"Body {i} position: ({x}, {y})")
                 scatters[i].set_data([x], [y])
-            return scatters + lines
+                labels[i].set_position((x+0.05, y+0.05))
+            return scatters + lines + labels
 
         ani = FuncAnimation(
             fig, update, frames=len(list_of_bodies[0].history),
@@ -275,6 +287,7 @@ class NBodyGUI:
         plt.tight_layout()
 
         plt.show()
+        print(sim.list_of_names())
     
 
 if __name__ == "__main__":
@@ -282,8 +295,11 @@ if __name__ == "__main__":
     app = NBodyGUI(root)
     root.mainloop()
 
-
-
+# filename = r"D:\computational_physics\n_body_simulation\solar_system.csv"
+# dummy = csv_to_listofdicts(filename)
+# print( dummy[1] )
+# list_of_bodies = initialise_many_bodies(dummy)
+# sim = Simulation(list_of_bodies)
 
 
 #energy = np.array(sim.total_energy_hist)

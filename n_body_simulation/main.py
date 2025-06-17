@@ -5,6 +5,9 @@ import pandas as pd
 import scipy as sp
 import math
 from typing import List
+import tkinter as tk
+from tkinter import messagebox
+import random
 
 """
 Structure of dictionary to add bodies:
@@ -18,14 +21,14 @@ Structure of dictionary to add bodies:
 pi = math.pi
 
 def csv_to_listofdicts( path: str ):
-    df = pd.read_csv(f'{path}', comment='#', header=None, names=['x', 'y', 'vx', 'vy', 'mass'])
+    df = pd.read_csv(f'{path}',dtype={'name': str}, comment='#', header=None, names=['x', 'y', 'vx', 'vy', 'mass', 'name'])
     return df.to_dict('records')
 
 # --- Body Class ---
 class Bodies:
 
-    G = sp.constants.gravitational_constant
-    #G = 4 * pi**2
+    #G = sp.constants.gravitational_constant
+    G = 4 * pi**2
 
     body_counter = 1
 
@@ -35,6 +38,7 @@ class Bodies:
     def __init__( self, data: dict) -> None:
         self.pos = np.array( [ data['x'], data['y'] ], dtype=float )
         self.vel = np.array( [ data['vx'], data['vy'] ], dtype=float )
+        self.name = str(data['name'])
         self.force = np.zeros(2)
         self.mass = data['mass']
         self.identifier = Bodies.body_counter
@@ -109,6 +113,13 @@ class Simulation:
         self.pot = 0
         self.total = 0
 
+    def list_of_names( self ):
+        dummy_list = []
+        for body in self.bodies:
+            dummy_list.append(body.name)
+        return dummy_list
+
+
 
     def total_kin_energy( self ):
         total = 0
@@ -158,6 +169,7 @@ class Simulation:
             for body in self.bodies:
                 body.update(self.bodies, dt)
                 body.history.append(body.pos.copy())
+                
 
             self.kin = self.total_kin_energy()
             self.pot = self.total_pot_energy()
@@ -168,80 +180,131 @@ class Simulation:
             self.time_history.append(step * dt)
 
     
-
-
-            
 def initialise_many_bodies( input: list ) -> List:
     body_list = []
     for i in input:
         body_list.append(Bodies(i))
     return body_list
 
+class NBodyGUI:
+
+    def __init__( self, root):
+        self.root = root
+        self.root.title("N-Body Simulation Setup")
+
+        tk.Label(root, text="Timestep (dt): ").grid(row=0, column=0)
+        self.dt_entry = tk.Entry(root)
+        self.dt_entry.grid (row=0, column=1)
+
+        tk.Label(root, text="Number of steps: ").grid(row=1, column=0)
+        self.steps_entry = tk.Entry(root)
+        self.steps_entry.grid(row=1, column=1)
+
+        tk.Label(root, text="Initial Configuration: ").grid(row=3, column=0)
+        self.config_var = tk.StringVar(root)
+        self.config_var.set("Simple Solar System")
+        options = ["Random", "Simple Solar System", "Three Body Problem", "Binary System"]
+        self.dropdown = tk.OptionMenu(root, self.config_var, *options)
+        self.dropdown.grid(row=3, column=1)
+
+        run_button = tk.Button(root, text="Run Simulation", command=self.run_sim)
+        run_button.grid(row=4, column=0, columnspan=2, pady=10)
+
+    config_files = {
+        "Simple Solar System" : r"D:\computational_physics\n_body_simulation\solar_system.csv",
+        "Three Body Problem": r"D:\computational_physics\n_body_simulation\three_body.csv",
+        "Binary System": r"D:\computational_physics\n_body_simulation\binary_system.csv"
+    }
+
+    def run_sim( self ):
+        try:
+            dt = float(self.dt_entry.get())
+            steps = int(self.steps_entry.get())
+            config = self.config_var.get()
+            
+            if config == "Random":
+                filename = random.choice(list(NBodyGUI.config_files.values()))
+
+            filename = NBodyGUI.config_files.get(config)       
+            if not filename:
+                raise ValueError("Invalid configuration selected.")
+        except ValueError:
+            messagebox.showerror("Invalid input", "Please enter valid numbers.")
+            return
+        
+        dummy = csv_to_listofdicts(filename)
+        list_of_bodies = initialise_many_bodies(dummy)
+        sim = Simulation(list_of_bodies)
+        sim.run(dt, steps)
+
+        bodies_history = []
+        for body in list_of_bodies:
+            bodies_history.append(body.history)
 
 
-dummy = csv_to_listofdicts(r"D:\computational_physics\n_body_simulation\bodies_SI.csv")
-list_of_bodies = initialise_many_bodies(dummy)
-sim = Simulation(list_of_bodies)
+        fig, ax = plt.subplots()
+        ax.set_aspect( 'equal' )
+        ax.set_xlim( -2, 2 )
+        ax.set_ylim( -2, 2 )
 
-dt = 60
-steps = 10000
-sim.run(dt, steps)
+        scatters = [ax.plot([], [], 'o')[0] for _ in list_of_bodies]
+        labels = [ax.text(0, 0, name, fontsize=8, ha='left', va='bottom') for name in sim.list_of_names()]
+        lines = [ax.plot([], [], lw=1)[0] for _ in list_of_bodies]
 
-bodies_history = []
-for body in list_of_bodies:
-    bodies_history.append(body.history)
+        def init():
+            for scatter, line in zip(scatters, lines):
+                scatter.set_data([], [])
+                line.set_data([], [])
+            for label in labels:
+                label.set_position((0,0))
+            return scatters + lines + labels
+
+        def update(frame):
+            print(f"Frame {frame}:")
+            for i, body in enumerate(list_of_bodies):
+                history = np.array(body.history)
+                lines[i].set_data(history[:frame+1, 0], history[:frame+1, 1])
+                x, y = history[frame]
+                print(f"Body {i} position: ({x}, {y})")
+                scatters[i].set_data([x], [y])
+                labels[i].set_position((x+0.05, y+0.05))
+            return scatters + lines + labels
+
+        ani = FuncAnimation(
+            fig, update, frames=len(list_of_bodies[0].history),
+            init_func=init, blit=False, interval=20
+        )
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(sim.time_history, sim.kin_energy_hist, label="Kinetic Energy", color="blue")
+        plt.plot(sim.time_history, sim.pot_energy_hist, label="Potential Energy", color="green")
+        plt.plot(sim.time_history, sim.total_energy_hist, label="Total Energy", color="red", linestyle= "--")
+        plt.ylabel = "Energies"
+        plt.xlabel = "Time"
+        plt.title = "Energy vs Time"
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+
+        plt.show()
+        print(sim.list_of_names())
+    
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = NBodyGUI(root)
+    root.mainloop()
+
+# filename = r"D:\computational_physics\n_body_simulation\solar_system.csv"
+# dummy = csv_to_listofdicts(filename)
+# print( dummy[1] )
+# list_of_bodies = initialise_many_bodies(dummy)
+# sim = Simulation(list_of_bodies)
 
 
-fig, ax = plt.subplots()
-ax.set_aspect( 'equal' )
-ax.set_xlim( -3e11, 3e11 )
-ax.set_ylim( -3e11, 3e11 )
-
-scatters = [ax.plot([], [], 'o')[0] for _ in list_of_bodies]
-lines = [ax.plot([], [], lw=1)[0] for _ in list_of_bodies]
-
-def init():
-    for scatter, line in zip(scatters, lines):
-        scatter.set_data([], [])
-        line.set_data([], [])
-    return scatters + lines
-
-def update(frame):
-    print(f"Frame {frame}:")
-    for i, body in enumerate(list_of_bodies):
-        history = np.array(body.history)
-        lines[i].set_data(history[:frame+1, 0], history[:frame+1, 1])
-        x, y = history[frame]
-        print(f"Body {i} position: ({x}, {y})")
-        scatters[i].set_data([x], [y])
-    return scatters + lines
-
-ani = FuncAnimation(
-    fig, update, frames=len(list_of_bodies[0].history),
-    init_func=init, blit=False, interval=20
-)
-
-plt.figure(figsize=(10, 6))
-plt.plot(sim.time_history, sim.kin_energy_hist, label="Kinetic Energy", color="blue")
-plt.plot(sim.time_history, sim.pot_energy_hist, label="Potential Energy", color="green")
-plt.plot(sim.time_history, sim.total_energy_hist, label="Total Energy", color="red", linestyle= "--")
-plt.ylabel = "Energies"
-plt.xlabel = "Time"
-plt.title = "Energy vs Time"
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-
-plt.show()
-
-#print(f"Steps: {steps}")
-#for i, body in enumerate(list_of_bodies):
-    #print(f"Body {i} has {len(body.history)} positions.")
-
-
-energy = np.array(sim.total_energy_hist)
-time = np.array(sim.time_history)
-grad_array = np.gradient(energy,time)
-avg_grad = (energy[-1] - energy[0]/ time[-1] - time[0])
-print(f"Average energy gradient: {avg_grad:.3e} J/s")
+#energy = np.array(sim.total_energy_hist)
+#time = np.array(sim.time_history)
+#grad_array = np.gradient(energy,time)
+#avg_grad = (energy[-1] - energy[0]/ time[-1] - time[0])
+#print(f"Average energy gradient: {avg_grad:.3e} J/s")
 

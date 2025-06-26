@@ -43,7 +43,13 @@ class IsingLattice:
         P = math.exp(power)
         return P
 
-
+    def measure_magnetisation(self, sweep):
+        total_sites = self.lattice.size
+        total_magnetisation = np.sum(self.lattice)
+        normed_magnetisation = total_magnetisation / total_sites
+        self.normed_magnetsation = []
+        self.normed_magnetsation.append((sweep, normed_magnetisation))
+        
     def run(self, sweeps=1000, T=2.0):
         plt.ion()
         fig, ax = plt.subplots()
@@ -64,6 +70,7 @@ class IsingLattice:
                         rand_float = random.random()
                         if rand_float <= probability:
                             self.flip_spin(position)
+            self.measure_magnetisation(sweep)
             im.set_data(self.lattice)
             ax.set_title(f"Ising Model: Sweep {sweep + 1}")
             fig.canvas.draw()
@@ -72,5 +79,8 @@ class IsingLattice:
         plt.ioff()
         plt.show()
 
+
+temperatures = np.linspace(1.5, 3.5, num=50)
+# Write a program to measure the critical temperature (aka when magnetisation ~= 0)
 tester = IsingLattice()
 tester.run()

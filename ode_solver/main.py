@@ -144,15 +144,21 @@ def duffing_oscillator(t, y, delta=0.1, alpha=-1.0, beta=1.0):
     dv_dt = -delta * v - alpha * x - beta * x**3
     return np.array([dx_dt, dv_dt])
 
+def test_func(t, y):
+    x, v = y
+    dx_dt = v
+    dv_dt = np.sin(t**2) - 2 * t**2
+    return np.array([dx_dt, dv_dt])
 
-t_vals, y_vals = second_rk4(duffing_oscillator, 0.0, [0, 2.0], 0.01, 5000)
+
+t_vals, y_vals = second_rk4(test_func, 0.0, [0, 2.0], 0.01, 1000)
 
 x_vals = y_vals[:, 0]
 v_vals = y_vals[:, 1]
 
 plt.plot(t_vals, x_vals, label="x(t) - Position")
 plt.plot(t_vals, v_vals, label="v(t) - Velocity")
-plt.title("Duffing Oscillator (RK4)")
+plt.title("Random ODE (RK4)")
 plt.xlabel("Time")
 plt.ylabel("Value")
 plt.legend()

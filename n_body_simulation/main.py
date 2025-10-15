@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import pandas as pd
-import scipy as sp
 import math
 from typing import List
 import tkinter as tk
@@ -20,52 +19,53 @@ Structure of dictionary to add bodies:
 
 pi = math.pi
 
-def csv_to_listofdicts( path: str ):
-    df = pd.read_csv(f'{path}',dtype={'name': str}, comment='#', header=None, names=['x', 'y', 'vx', 'vy', 'mass', 'name'])
+
+def csv_to_listofdicts(path: str):
+    df = pd.read_csv(f'{path}', dtype={'name': str}, comment='#',
+                     header=None, names=['x', 'y', 'vx', 'vy', 'mass', 'name'])
     return df.to_dict('records')
+
 
 # --- Body Class ---
 class Bodies:
 
-    #G = sp.constants.gravitational_constant
     G = 4 * pi**2
 
     body_counter = 1
 
     _instances: List["Bodies"] = []
 
-
-    def __init__( self, data: dict) -> None:
-        self.pos = np.array( [ data['x'], data['y'] ], dtype=float )
-        self.vel = np.array( [ data['vx'], data['vy'] ], dtype=float )
+    def __init__(self, data: dict) -> None:
+        self.pos = np.array([data['x'], data['y']], dtype=float)
+        self.vel = np.array([data['vx'], data['vy']], dtype=float)
         self.name = str(data['name'])
         self.force = np.zeros(2)
         self.mass = data['mass']
         self.identifier = Bodies.body_counter
         Bodies.body_counter += 1
-        self.history = [] 
+        self.history = []
         Bodies._instances.append(self)
 
-    def __repr__( self ) -> str:
+    def __repr__(self) -> str:
         return f"Body (x={self.x}, y={self.y}, vx={self.vx}, vy={self.vy}, mass={self.mass})"
-    
+
     def all_instances(cls) -> List["Bodies"]:
         return cls._instances
-    
-    def dist( self, other: "Bodies" ) -> tuple[ float, np.ndarray ]:
+
+    def dist(self, other: "Bodies") -> tuple[float, np.ndarray]:
         dist = other.pos - self.pos
-        r = np.linalg.norm( dist )
+        r = np.linalg.norm(dist)
         return r, dist
-    
-    def reset_force( self ):
+
+    def reset_force(self):
         self.force = np.zeros(2)
-    
-    def net_grav_force( self, others: List[ "Bodies" ] ) -> None:
+
+    def net_grav_force(self, others: List["Bodies"]) -> None:
         self.reset_force()
         for other in others:
             if other is self:
                 continue
-            r_mag, r_vec = self.dist( other )
+            r_mag, r_vec = self.dist(other)
             if r_mag == 0:
                 continue
             r_hat = r_vec / r_mag
@@ -73,84 +73,78 @@ class Bodies:
             self.force += force_mag * r_hat
 
     @property
-    def accel( self ) -> float:
+    def accel(self) -> float:
         return self.force / self.mass
 
-    
-    def verlet_pos_update( self, dt: float ):
+    def verlet_pos_update(self, dt: float):
         self.pos += self.vel * dt + 0.5 * self.accel * dt**2
 
-    def update( self, others: List["Bodies"], dt: float ):
+    def update(self, others: List["Bodies"], dt: float):
         old_accel = self.accel
         self.verlet_pos_update(dt)
         self.net_grav_force(others)
         new_accel = self.accel
         self.vel += 0.5 * (old_accel + new_accel) * dt
 
-    def kin_energy( self ):
-        vel_mag = np.linalg.norm( self.vel )
-        out = float(0.5 * self.mass * vel_mag**2 )
+    def kin_energy(self):
+        vel_mag = np.linalg.norm(self.vel)
+        out = float(0.5 * self.mass * vel_mag**2)
         return out
-    
-    def pot_energy( self, others: List["Bodies"] ):
+
+    def pot_energy(self, others: List["Bodies"]):
         total = 0
         for other in others:
             if other is self:
                 continue
-            r_mag = self.dist( other )[0]
+            r_mag = self.dist(other)[0]
             if r_mag == 0:
                 continue
             total += - Bodies.G * self.mass * other.mass / r_mag
             return total
-    
+
 
 # --- Simulation Class ---
 class Simulation:
 
-    def __init__( self, bodies: List["Bodies"] ):
+    def __init__(self, bodies: List["Bodies"]):
         self.bodies = bodies
         self.kin = 0
         self.pot = 0
         self.total = 0
 
-    def list_of_names( self ):
+    def list_of_names(self):
         dummy_list = []
         for body in self.bodies:
             dummy_list.append(body.name)
         return dummy_list
 
-
-
-    def total_kin_energy( self ):
+    def total_kin_energy(self):
         total = 0
         for body in self.bodies:
             total += body.kin_energy()
         return total
-    
 
-    def total_pot_energy( self ):
+    def total_pot_energy(self):
         total = 0
         for body in self.bodies:
-            total += body.pot_energy( self.bodies )
+            total += body.pot_energy(self.bodies)
         return total
-    
-    def tot_energy( self ):
+
+    def tot_energy(self):
         self.total = self.kin + self.pot
 
-
-    def step( self, dt ):
+    def step(self, dt):
         for body in self.bodies:
-            body.net_grav_force( self.bodies ) 
+            body.net_grav_force(self.bodies) 
 
         for body in self.bodies:
-            body.update( self.bodies, dt )
+            body.update(self.bodies, dt)
 
         self.kin = self.total_kin_energy()
         self.pot = self.total_pot_energy()
         self.total = self.tot_energy()
-        
 
-    def run( self, dt: float, steps: int ):
+    def run(self, dt: float, steps: int):
         self.kin_energy_hist = []
         self.pot_energy_hist = []
         self.total_energy_hist = []
@@ -169,32 +163,32 @@ class Simulation:
             for body in self.bodies:
                 body.update(self.bodies, dt)
                 body.history.append(body.pos.copy())
-                
 
             self.kin = self.total_kin_energy()
             self.pot = self.total_pot_energy()
-            self.total = self.kin + self.pot
+            self.total = abs(self.kin) + abs(self.pot)
             self.kin_energy_hist.append(self.kin)
             self.pot_energy_hist.append(self.pot)
             self.total_energy_hist.append(self.total)
             self.time_history.append(step * dt)
 
-    
-def initialise_many_bodies( input: list ) -> List:
+
+def initialise_many_bodies(input: list) -> List:
     body_list = []
     for i in input:
         body_list.append(Bodies(i))
     return body_list
 
+
 class NBodyGUI:
 
-    def __init__( self, root):
+    def __init__(self, root):
         self.root = root
         self.root.title("N-Body Simulation Setup")
 
         tk.Label(root, text="Timestep (dt): ").grid(row=0, column=0)
         self.dt_entry = tk.Entry(root)
-        self.dt_entry.grid (row=0, column=1)
+        self.dt_entry.grid(row=0, column=1)
 
         tk.Label(root, text="Number of steps: ").grid(row=1, column=0)
         self.steps_entry = tk.Entry(root)
@@ -216,22 +210,22 @@ class NBodyGUI:
         "Binary System": r"D:\computational_physics\n_body_simulation\binary_system.csv"
     }
 
-    def run_sim( self ):
+    def run_sim(self):
         try:
             dt = float(self.dt_entry.get())
             steps = int(self.steps_entry.get())
             config = self.config_var.get()
-            
+
             if config == "Random":
                 filename = random.choice(list(NBodyGUI.config_files.values()))
 
-            filename = NBodyGUI.config_files.get(config)       
+            filename = NBodyGUI.config_files.get(config)
             if not filename:
                 raise ValueError("Invalid configuration selected.")
         except ValueError:
             messagebox.showerror("Invalid input", "Please enter valid numbers.")
             return
-        
+
         dummy = csv_to_listofdicts(filename)
         list_of_bodies = initialise_many_bodies(dummy)
         sim = Simulation(list_of_bodies)
@@ -241,14 +235,14 @@ class NBodyGUI:
         for body in list_of_bodies:
             bodies_history.append(body.history)
 
-
         fig, ax = plt.subplots()
-        ax.set_aspect( 'equal' )
-        ax.set_xlim( -2, 2 )
-        ax.set_ylim( -2, 2 )
+        ax.set_aspect('equal')
+        ax.set_xlim(-2, 2)
+        ax.set_ylim(-2, 2)
 
         scatters = [ax.plot([], [], 'o')[0] for _ in list_of_bodies]
-        labels = [ax.text(0, 0, name, fontsize=8, ha='left', va='bottom') for name in sim.list_of_names()]
+        labels = [ax.text(0, 0, name, fontsize=8, ha='left', va='bottom') for
+                  name in sim.list_of_names()]
         lines = [ax.plot([], [], lw=1)[0] for _ in list_of_bodies]
 
         def init():
@@ -256,7 +250,7 @@ class NBodyGUI:
                 scatter.set_data([], [])
                 line.set_data([], [])
             for label in labels:
-                label.set_position((0,0))
+                label.set_position((0, 0))
             return scatters + lines + labels
 
         def update(frame):
@@ -288,7 +282,7 @@ class NBodyGUI:
 
         plt.show()
         print(sim.list_of_names())
-    
+
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -300,11 +294,3 @@ if __name__ == "__main__":
 # print( dummy[1] )
 # list_of_bodies = initialise_many_bodies(dummy)
 # sim = Simulation(list_of_bodies)
-
-
-#energy = np.array(sim.total_energy_hist)
-#time = np.array(sim.time_history)
-#grad_array = np.gradient(energy,time)
-#avg_grad = (energy[-1] - energy[0]/ time[-1] - time[0])
-#print(f"Average energy gradient: {avg_grad:.3e} J/s")
-

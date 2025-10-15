@@ -205,9 +205,9 @@ class NBodyGUI:
         run_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     config_files = {
-        "Simple Solar System" : r"D:\computational_physics\n_body_simulation\solar_system.csv",
-        "Three Body Problem": r"D:\computational_physics\n_body_simulation\three_body.csv",
-        "Binary System": r"D:\computational_physics\n_body_simulation\binary_system.csv"
+        "Simple Solar System" : r"D:\computational_physics\projects\n_body_simulation\data_files\solar_system.csv",
+        "Three Body Problem": r"D:\computational_physics\projects\n_body_simulation\data_files\three_body.csv",
+        "Binary System": r"D:\computational_physics\projects\n_body_simulation\data_files\binary_system.csv"
     }
 
     def run_sim(self):

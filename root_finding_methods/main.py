@@ -1,7 +1,4 @@
-from matplotlib import pyplot as plt
 import numpy as np
-import sympy as sp
-import scipy as scp
 
 
 """
@@ -18,14 +15,15 @@ f_vals = f(x_vals)
 
 
 def bisector_root_finder(function, start, end, epsilon=0.00001):
-    iteration = 0
+    iter = 0
 
     while True:
         c = (start + end) / 2
         fc = function(c)
 
         if fc == 0 or abs(fc) < epsilon:
-            print(f"It took {iteration} iterations to get to root within {epsilon}.")
+            print(
+                f"It took {iter} iterations to get to root within {epsilon}.")
             return c
 
         if fc * function(start) < 0:
@@ -33,7 +31,7 @@ def bisector_root_finder(function, start, end, epsilon=0.00001):
         else:
             start = c
 
-        iteration += 1
+        iter += 1
 
 
 def newton_raphson(function, start, end, epsilon=0.0001):
@@ -46,7 +44,8 @@ def newton_raphson(function, start, end, epsilon=0.0001):
         fxn = function(x0)
         dfxn = df(function, x0)
         if abs(dfxn) < 1e-10:
-            raise ZeroDivisionError("Derivate too small -- possible divergence")
+            raise ZeroDivisionError(
+                "Derivate too small -- possible divergence")
         x2 = x0 - (fxn / dfxn)
         diff = abs(x2 - x0)
         x0 = x2
@@ -58,6 +57,7 @@ root_finders = {
     "newton": newton_raphson,
     "bisection": bisector_root_finder,
 }
+
 
 def find_root(f, method, start, end, N):
     if method not in root_finders:
@@ -79,7 +79,3 @@ def find_root(f, method, start, end, N):
         return roots[0]
     else:
         return roots
-
-
-print(find_root(f, "bisection", 0, 4, N=150))
-print(find_root(f, "newton", 0, 4, N=150))

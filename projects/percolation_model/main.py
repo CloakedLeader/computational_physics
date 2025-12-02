@@ -1,6 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
+from collections import deque
+
 
 def random_num() -> float:
     return np.random.random()
@@ -33,7 +35,7 @@ class PercolationLattice:
                     self.identify_clusters((i, j), label)
                     label += 1
 
-        self.num_clusters = label
+        self.num_clusters = label - 1
 
     def check_neighbours(self, position: tuple[int, int]) -> list[tuple[int, int]]:
         positives = []
@@ -43,15 +45,31 @@ class PercolationLattice:
                 if self.lattice[nx][ny] == 1:
                     positives.append((nx, ny))
         return positives
-
+    
     def identify_clusters(self, position: tuple[int, int], current_label) -> None:
-        x, y = position
-        if self.labels[x][y] != 0:
-            return
-        self.labels[x][y] = current_label
-        for nx, ny in self.check_neighbours(position):
-            if self.labels[nx][ny] == 0:
-                self.identify_clusters((nx, ny), current_label)
+        queue = deque()
+        queue.append(position)
+        neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+        while queue:
+            x, y = queue.popleft()
+            if self.labels[x][y] != 0:
+                continue
+            self.labels[x][y] = current_label
+            for dx, dy in neighbors:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.size and 0 <= ny < self.size:
+                    if self.lattice[nx][ny] == 1 and self.labels[nx, ny] == 0:
+                        queue.append((nx, ny))
+
+    # def identify_clusters(self, position: tuple[int, int], current_label) -> None:
+    #     x, y = position
+    #     if self.labels[x][y] != 0:
+    #         return
+    #     self.labels[x][y] = current_label
+    #     for nx, ny in self.check_neighbours(position):
+    #         if self.labels[nx][ny] == 0:
+    #             self.identify_clusters((nx, ny), current_label)
 
     def is_spanning_cluster(self) -> bool:
         updownlabels = []
@@ -93,7 +111,7 @@ def average_over_p(num_of_p: int, lattice_size: int, trials_per_p: int) -> list[
     
     return results
 
-res = average_over_p(20, 30, 100)
+res = average_over_p(30, 100, 100)
 ps, spanning_probs = zip(*res)
 f = interp1d(spanning_probs, ps)
 p_c = float(f(0.5))

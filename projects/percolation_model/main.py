@@ -14,8 +14,7 @@ class PercolationLattice:
         self.labels = np.zeros((size, size), dtype=object)
         self.prob = probability
         self.size = size
-        self.all_labels = None
-        self.num_clusters = None
+        self.num_clusters = 0
         for i in range(size):
             for j in range(size):
                 if random_num() < probability:
@@ -61,15 +60,6 @@ class PercolationLattice:
                 if 0 <= nx < self.size and 0 <= ny < self.size:
                     if self.lattice[nx][ny] == 1 and self.labels[nx, ny] == 0:
                         queue.append((nx, ny))
-
-    # def identify_clusters(self, position: tuple[int, int], current_label) -> None:
-    #     x, y = position
-    #     if self.labels[x][y] != 0:
-    #         return
-    #     self.labels[x][y] = current_label
-    #     for nx, ny in self.check_neighbours(position):
-    #         if self.labels[nx][ny] == 0:
-    #             self.identify_clusters((nx, ny), current_label)
 
     def is_spanning_cluster(self) -> bool:
         updownlabels = []
@@ -120,4 +110,3 @@ plt.plot(ps, spanning_probs, 'o-')
 plt.xlabel('p')
 plt.ylabel('Spanning Probability')
 plt.show()
-

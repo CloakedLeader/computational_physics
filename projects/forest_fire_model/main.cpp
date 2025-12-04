@@ -99,7 +99,7 @@ public:
 
     void run() {
         std::ofstream file("results.csv");
-        file << "#step_number, empty, tree, burning";
+        file << "#step_number, empty, tree, burning" << '\n';
         for (int t = 0; t < steps; t++) {
             advanceOneStep();
             std::array<int, 3> inst = countInstMetrics();
@@ -110,7 +110,9 @@ public:
     }
 };
 
-void main () {
-    ForestLattice forest(100, 500, 0.005, 0.2);
+int main() {
+    ForestLattice forest(100, 500, 0.001, 0.2);
     forest.run();
+
+    return 0;
 }

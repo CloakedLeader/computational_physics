@@ -51,6 +51,10 @@ def test_energy_convergence_ellipse():
     gradient, _ = np.polyfit(np.log10(step_sizes), np.log10(max_errors), 1)
     print(gradient)
     plt.plot(np.log10(step_sizes), np.log10(max_errors))
+    plt.xlabel("Log(dt)")
+    plt.ylabel("Log(Energy Drift)")
+    plt.title("Log plot of error against step size")
+    plt.figtext(0.15, 0.77, f"Gradient = {gradient:.3f}")
     plt.show()
 
     assert math.isclose(gradient, 2.0, rel_tol=0.1), \

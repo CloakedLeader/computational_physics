@@ -16,8 +16,6 @@ As a measure of numerical error I use the maximum relative energy drift.
 
 For a circular orbit the error for different step sizes (0.004, 0.002, 0.001 and 0.0005) all are under $10^{-6}.$
 
+To measure the convergence rate for this method (which should be second order) I plot a log plot of the error (energy drift) against step size and find the gradient.
 
-
-Example trajectory of the solar system:
-
-![nbody demo](demo.gif)
+![Energy drift against step size](figures/Figure_1.png)

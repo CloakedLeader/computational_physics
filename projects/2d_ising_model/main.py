@@ -39,7 +39,7 @@ class IsingLattice:
     def flip_spin(self, pos):
         self.lattice[pos] = self.lattice[pos]*-1
 
-    def find_boltzman_prob(self, energy_change, temp):
+    def find_boltzmann_prob(self, energy_change, temp):
         power = -1*energy_change/(temp)
         P = math.exp(power)
         return P
@@ -67,7 +67,7 @@ class IsingLattice:
             if energy_change < 0:
                 self.flip_spin(position)
             else:
-                probability = self.find_boltzman_prob(energy_change, T)
+                probability = self.find_boltzmann_prob(energy_change, T)
                 rand_float = random.random()
                 if rand_float <= probability:
                     self.flip_spin(position)

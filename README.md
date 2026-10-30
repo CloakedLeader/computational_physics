@@ -4,14 +4,14 @@ This repository is my computational physics portfolio, covering numerical method
 
 ## Motivation
 
-I aim to gain hands-on experince with numerical solutions to physical problems and to explore current areas of computational physics research. With the final goal being using computational methods for my studies in theoretical physics.
+I aim to gain hands-on experience with numerical solutions to physical problems and to explore current areas of computational physics research. With the final goal being using computational methods for my studies in theoretical physics.
 
 ## Featured Projects
 
 | Project | Description | Topics | Demo |
 |---------|-------------|--------|------|
-| [N-Body Simulation](projects/n_body_simulation) | Simulates gravitational interactions using Runge-Kutta integrators. Simulates particle motion dynamically. | Classical Mechanics, ODEs | ![nbody](projects/n_body_simulation/demo.gif) |
-| [2D Ising Model](projects/2d_ising_model) | Monte Carlo simulation of magnetic spins to study phase transitions. | Statisical Mechanics, Monte Carlo | - |
+| [N-Body Simulation](projects/n_body_simulation) | Simulates gravitational interactions using velocity-Verlet. Simulates particle motion dynamically. | Classical Mechanics, ODEs | ![nbody](projects/n_body_simulation/demo.gif) |
+| [2D Ising Model](projects/2d_ising_model) | Monte Carlo simulation of magnetic spins to study phase transitions. | Statistical Mechanics, Monte Carlo | - |
 
 
 ## Installation
@@ -25,7 +25,7 @@ This project requires Python 3.x and at least the following libraries:
 
 ---
 
-Please feel free to open issues or contact me at adam.perrott@kcl.ac.uk if you have questions or suggestions. 
+Please feel free to open issues or contact me at adam.perrott@protonmail.com if you have questions or suggestions. 
 
 
 

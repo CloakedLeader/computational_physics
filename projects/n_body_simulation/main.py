@@ -46,11 +46,28 @@ class Bodies:
         self.history = []
         Bodies._instances.append(self)
 
-    def __repr__(self) -> str:
-        return f"Body (x={self.x}, y={self.y}, vx={self.vx}, vy={self.vy}, mass={self.mass})"
+    # def __repr__(self) -> str:
+    #     return f"Body (x={self.x}, y={self.y}, vx={self.vx}, vy={self.vy}, mass={self.mass})"
 
-    def all_instances(cls) -> List["Bodies"]:
-        return cls._instances
+    # @classmethod
+    # def all_instances(cls) -> List["Bodies"]:
+    #     return cls._instances
+
+    # @property
+    # def x(self) -> float:
+    #     return self.pos[-1][0]
+
+    # @property
+    # def y(self) -> float:
+    #     return self.pos[-1][1]
+
+    # @property
+    # def vx(self) -> float:
+    #     return self.vel[-1][0]
+
+    # @property
+    # def vy(self) -> float:
+    #     return self.vel[-1][1]
 
     def dist(self, other: "Bodies") -> tuple[float, np.ndarray]:
         dist = other.pos - self.pos
@@ -92,7 +109,7 @@ class Bodies:
         return out
 
     def pot_energy(self, others: List["Bodies"]):
-        total = 0
+        total = 0.0
         for other in others:
             if other is self:
                 continue
@@ -100,7 +117,7 @@ class Bodies:
             if r_mag == 0:
                 continue
             total += - Bodies.G * self.mass * other.mass / r_mag
-            return total
+        return total
 
 
 # --- Simulation Class ---
@@ -125,20 +142,26 @@ class Simulation:
         return total
 
     def total_pot_energy(self):
-        total = 0
-        for body in self.bodies:
-            total += body.pot_energy(self.bodies)
-        return total
+        return 0.5 * sum(b.pot_energy(self.bodies) for b in self.bodies)
 
     def tot_energy(self):
-        self.total = self.kin + self.pot
+        return self.kin + self.pot
+
+    def compute_forces(self):
+        for b in self.bodies:
+            b.net_grav_force(self.bodies)
 
     def step(self, dt):
-        for body in self.bodies:
-            body.net_grav_force(self.bodies) 
+        self.compute_forces()
+        old_acc = [b.accel for b in self.bodies]
 
-        for body in self.bodies:
-            body.update(self.bodies, dt)
+        for b, a in zip(self.bodies, old_acc):
+            b.pos += b.vel * dt + 0.5 * a * dt**2
+        self.compute_forces()
+
+        for b, a_old in zip(self.bodies, old_acc):
+            b.vel += 0.5 * (a_old + b.accel) * dt
+            b.history.append(b.pos.copy())
 
         self.kin = self.total_kin_energy()
         self.pot = self.total_pot_energy()
@@ -154,23 +177,17 @@ class Simulation:
         self.total = self.tot_energy()
         self.kin_energy_hist.append(self.kin)
         self.pot_energy_hist.append(self.pot)
-        self.total_energy_hist.append(self.kin + self.pot)
-        self.time_history.append(0)
+        self.total_energy_hist.append(self.total)
+        self.time_history.append(0.0)
 
-        for step in range(1, steps + 1):
-            for body in self.bodies:
-                body.net_grav_force(self.bodies)
-            for body in self.bodies:
-                body.update(self.bodies, dt)
-                body.history.append(body.pos.copy())
 
-            self.kin = self.total_kin_energy()
-            self.pot = self.total_pot_energy()
-            self.total = abs(self.kin) + abs(self.pot)
+        for n in range(1, steps + 1):
+            self.step(dt)
+
             self.kin_energy_hist.append(self.kin)
             self.pot_energy_hist.append(self.pot)
             self.total_energy_hist.append(self.total)
-            self.time_history.append(step * dt)
+            self.time_history.append(n * dt)
 
 
 def initialise_many_bodies(input: list) -> List:
@@ -179,7 +196,7 @@ def initialise_many_bodies(input: list) -> List:
         body_list.append(Bodies(i))
     return body_list
 
-
+    
 class NBodyGUI:
 
     def __init__(self, root):
@@ -273,9 +290,9 @@ class NBodyGUI:
         plt.plot(sim.time_history, sim.kin_energy_hist, label="Kinetic Energy", color="blue")
         plt.plot(sim.time_history, sim.pot_energy_hist, label="Potential Energy", color="green")
         plt.plot(sim.time_history, sim.total_energy_hist, label="Total Energy", color="red", linestyle= "--")
-        plt.ylabel = "Energies"
-        plt.xlabel = "Time"
-        plt.title = "Energy vs Time"
+        plt.ylabel("Energies")
+        plt.xlabel("Time")
+        plt.title("Energy vs Time")
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
@@ -284,10 +301,10 @@ class NBodyGUI:
         print(sim.list_of_names())
 
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = NBodyGUI(root)
-    root.mainloop()
+# if __name__ == "__main__":
+#     root = tk.Tk()
+#     app = NBodyGUI(root)
+#     root.mainloop()
 
 # filename = r"D:\computational_physics\n_body_simulation\solar_system.csv"
 # dummy = csv_to_listofdicts(filename)

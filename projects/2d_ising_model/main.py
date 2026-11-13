@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import random
 import math
 
 
 L = 25
+rng = np.random.default_rng(seed=130920042612)
 
 
 class IsingLattice:
@@ -25,7 +25,7 @@ class IsingLattice:
         return north, east, south, west
 
     def random_pos(self):
-        pos = (random.randint(0, L-1), random.randint(0, L-1))
+        pos = (rng.integers(0, L), rng.integers(0, L))
         return pos
 
     def compute_energy_change(self, pos):
@@ -68,7 +68,7 @@ class IsingLattice:
                 self.flip_spin(position)
             else:
                 probability = self.find_boltzmann_prob(energy_change, T)
-                rand_float = random.random()
+                rand_float = rng.random()
                 if rand_float <= probability:
                     self.flip_spin(position)
 
@@ -95,12 +95,12 @@ class IsingLattice:
         return mag, energ
 
 
-temperatures = np.linspace(1, 4, num=25)
+temperatures = np.linspace(1, 4, num=50)
 mag_vals = []
 energ_vals = []
 for i in temperatures:
     dummy = IsingLattice()
-    info = dummy.run(measure_sweeps=100, equil_sweeps=100, T=i)
+    info = dummy.run(T=i)
     mag, energ = dummy.find_avgs(info)
     mag_vals.append(mag)
     energ_vals.append(energ)

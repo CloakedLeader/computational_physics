@@ -3,5 +3,7 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "cmake.sourceDirectory": "/Users/adamp/Documents/coding/computational_physics/projects/2d_ising_model",
+    "cmake.ignoreCMakeListsMissing": true
 }

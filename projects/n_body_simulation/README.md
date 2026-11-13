@@ -4,9 +4,9 @@ This project simulates a system of particles interacting under Newtonian gravity
 The goal of this project was to explore **numerical stability** and **energy conservation** in integrator methods.
 
 ## Methods Used
-- Euler Method
+
 - Verlet Integrator
-- Heun's Method
+
 
 I originally used RK4 since this I assumed that the highest order method will be the most accurate but it led to the system not conserving energy and it slowly creeping up over time. So I did some research and came across sympletic integrators which are made to conserve the volume in phase space and hence the energy of the system. I then implemented a velocity-Verlet method which led to much more physical results.
 
@@ -19,3 +19,6 @@ For a circular orbit the error for different step sizes (0.004, 0.002, 0.001 and
 To measure the convergence rate for this method (which should be second order) I plot a log plot of the error (energy drift) against step size and find the gradient.
 
 ![Energy drift against step size](figures/Figure_1.png)
+
+As we can see, the gradient is near 2 and so we have indeed implemented a good second-order velocity-Verlet integrator which conserves energy well.
+

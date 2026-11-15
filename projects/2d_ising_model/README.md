@@ -3,7 +3,7 @@
 To measure accuracy to theoretical results I computed the mean energy per spin across different temperatures far from the critical point and averaged over $20$ independently seeded runs. These were compared with Onsager's explicit solution given by
 $$
 -J \coth(\frac{2J}{T})\left(
-    1 + \frac{2}{\pi}(2\tanh^2(\frac{2J}{T}) - 1)\mathcal{K}(k^2) 
+    1 + \frac{2}{\pi}(2\tanh^2(\frac{2J}{T}) - 1)\mathcal{K}(k) 
 \right)
 $$
 where $\mathcal{K}(k)$ is given by the complete elliptic integral of the first kind, given by
@@ -33,7 +33,7 @@ This representts a reduction by a factor of around $31$, in close agreement with
 
 Moreover, for sufficiently long simulations, the standard deviation of the Monte Carlo estimator is expected to scale approximately as
 
-$$\sigma_{\overline{E}} \propto N^{\frac{1}{2}}$$
+$$\sigma_{\overline{E}} \propto N^{-\frac{1}{2}}$$
 
 where $N$ is the number of measurement sweeps.
 
@@ -43,6 +43,6 @@ To investigate this relationship, the measured standard devations were plotted a
 
 As we can see, the measured results closely follow the expected scaling, with a gradient of $-0.502$ - incredibly close to the theoretical relationship.
 
-Although the absolute error between the Monte Carlo mean and the exact mean fluctaed between measurement lengts, all estimates remained within less than one standard errors of the exact result.
+Although the absolute error between the Monte Carlo mean and the exact mean fluctaed between measurement lengts, all estimates remained within two standard errors of the exact result.
 
 These results support the conclusion that the Metroplolis algorithm correctly reproduces the equilibrium average energy of the $4\times 4$ Ising model, within statistical precision of simulations.
